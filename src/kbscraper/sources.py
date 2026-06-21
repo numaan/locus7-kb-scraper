@@ -34,6 +34,7 @@ def _to_spec(data: dict, path: Path) -> SourceSpec:
         allow=list(data.get("allow", [])),
         deny=list(data.get("deny", [])),
         content_selector=data.get("content_selector"),
+        render=bool(data.get("render", False)),
         max_pages=int(data.get("max_pages", 200)),
         rate_limit_s=float(data.get("rate_limit_s", 1.0)),
         enabled=bool(data.get("enabled", True)),

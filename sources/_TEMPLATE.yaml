@@ -37,6 +37,10 @@ deny:
 # usually finds main content on its own).
 content_selector: "main"
 
+# Set true ONLY for JS-rendered docs that serve empty/redirect shells to a static fetch. Needs the
+# render extra (pip install -r requirements-render.txt && playwright install chromium). Experimental.
+render: false
+
 max_pages: 200                    # safety cap per source
 rate_limit_s: 1.0                 # seconds between requests to the same host (be polite)
 enabled: true

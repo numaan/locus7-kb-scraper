@@ -10,6 +10,7 @@ hammer a site.
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
@@ -20,6 +21,42 @@ import httpx
 
 from . import config
 from .models import RawDoc, SourceSpec
+
+# Client-side redirect stubs (meta-refresh / JS location) — followed once so we index the real page.
+_META_REFRESH = re.compile(r'<meta[^>]+http-equiv=["\']?refresh["\']?[^>]+content=["\'][^"\']*url=([^"\'>\s]+)', re.I)
+_JS_LOCATION = re.compile(r'(?:window\.location(?:\.href)?|location\.(?:href|replace\())\s*=?\s*\(?["\']([^"\']+)["\']', re.I)
+
+
+def _decode(r: httpx.Response) -> str:
+    """Robustly decode a response body. Trust the header charset (strict — a wrong one raises rather
+    than yielding �), else detect from bytes, else utf-8 with replacement. Fixes mojibake like © → �."""
+    enc = r.charset_encoding  # from the Content-Type header, if any
+    if enc:
+        try:
+            return r.content.decode(enc)
+        except (LookupError, UnicodeDecodeError):
+            pass
+    try:
+        from charset_normalizer import from_bytes
+
+        best = from_bytes(r.content).best()
+        if best is not None:
+            return str(best)
+    except Exception:  # noqa: BLE001 - detection is best-effort
+        pass
+    return r.content.decode("utf-8", errors="replace")
+
+
+def _same_host(a: str, b: str) -> bool:
+    return urlparse(a).netloc == urlparse(b).netloc
+
+
+def _redirect_target(html: str, base_url: str) -> str | None:
+    """Resolve a meta-refresh / JS-location redirect URL from a stub page, or None."""
+    m = _META_REFRESH.search(html) or _JS_LOCATION.search(html)
+    if not m:
+        return None
+    return urljoin(base_url, m.group(1).strip()).split("#")[0]
 
 
 def url_allowed(url: str, spec: SourceSpec) -> bool:
@@ -77,19 +114,13 @@ class Fetcher:
         self._last_hit[host] = time.monotonic()
 
     # --- fetching ---
-    def get(self, url: str, rate_limit_s: float = 1.0, use_cache: bool = True) -> str | None:
-        cp = _cache_path(url)
-        if use_cache and cp.exists():
-            return cp.read_text(encoding="utf-8", errors="ignore")
-        if not self.can_fetch(url):
-            return None
+    def _http_get(self, url: str, rate_limit_s: float) -> str | None:
         for attempt in range(config.MAX_RETRIES):
             self._throttle(url, rate_limit_s)
             try:
                 r = self._client.get(url)
                 if r.status_code == 200 and "html" in r.headers.get("content-type", "html"):
-                    cp.write_text(r.text, encoding="utf-8")
-                    return r.text
+                    return _decode(r)
                 if r.status_code in (429, 500, 502, 503, 504):
                     time.sleep(2 ** attempt)
                     continue
@@ -98,8 +129,33 @@ class Fetcher:
                 time.sleep(2 ** attempt)
         return None
 
-    def fetch_doc(self, url: str, rate_limit_s: float = 1.0) -> RawDoc | None:
-        html = self.get(url, rate_limit_s)
+    def _render_get(self, url: str, rate_limit_s: float) -> str | None:
+        from .render import render_html  # optional dep; import only when a source opts in
+
+        self._throttle(url, rate_limit_s)
+        return render_html(url)
+
+    def get(self, url: str, rate_limit_s: float = 1.0, use_cache: bool = True, render: bool = False, _hops: int = 0) -> str | None:
+        cp = _cache_path(url)
+        if use_cache and cp.exists():
+            return cp.read_text(encoding="utf-8", errors="ignore")
+        if not self.can_fetch(url):
+            return None
+        html = self._render_get(url, rate_limit_s) if render else self._http_get(url, rate_limit_s)
+        if html is None:
+            return None
+        # Follow a single client-side redirect (meta-refresh / JS) for stub pages (static fetch only).
+        if not render and _hops < 2:
+            target = _redirect_target(html, url)
+            if target and target != url and _same_host(target, url):
+                followed = self.get(target, rate_limit_s, use_cache, render, _hops + 1)
+                if followed:
+                    html = followed
+        cp.write_text(html, encoding="utf-8")
+        return html
+
+    def fetch_doc(self, url: str, rate_limit_s: float = 1.0, render: bool = False) -> RawDoc | None:
+        html = self.get(url, rate_limit_s, render=render)
         if html is None:
             return None
         return RawDoc(url=url, html=html, fetched_at=datetime.now(timezone.utc).isoformat())

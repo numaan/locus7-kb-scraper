@@ -48,7 +48,7 @@ def run_source(spec: SourceSpec, fetcher: Fetcher | None = None, out_dir: Path |
         stats.urls = len(urls)
         with out_path.open("w", encoding="utf-8") as fh:
             for url in urls:
-                raw = fetcher.fetch_doc(url, spec.rate_limit_s)
+                raw = fetcher.fetch_doc(url, spec.rate_limit_s, render=spec.render)
                 if raw is None:
                     stats.pages_skipped += 1
                     continue

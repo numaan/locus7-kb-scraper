@@ -26,6 +26,7 @@ class SourceSpec:
     allow: list[str] = field(default_factory=list)  # substring/prefix filters a URL must match
     deny: list[str] = field(default_factory=list)  # substrings that exclude a URL
     content_selector: str | None = None  # CSS selector for main content (extractor fallback)
+    render: bool = False  # headless-render this source (JS-heavy docs); needs the render extra
     max_pages: int = 200
     rate_limit_s: float = 1.0
     enabled: bool = True
