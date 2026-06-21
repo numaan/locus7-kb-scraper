@@ -1,7 +1,9 @@
 id: kafka
 name: Apache Kafka
 component: kafka
-license: "Apache-2.0 (kafka.apache.org documentation)"
+license: "Apache-2.0"
+license_url: https://www.apache.org/licenses/LICENSE-2.0
+usage: open
 base_url: https://kafka.apache.org/
 # Kafka's core docs are large single pages; crawl the documentation + ops areas.
 sitemaps: []

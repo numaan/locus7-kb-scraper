@@ -13,6 +13,7 @@ from .chunk import build_chunks
 from .clean import content_hash, is_meaningful
 from .extract import extract
 from .fetch import Fetcher
+from .licensing import is_permitted
 from .models import SourceSpec
 from .sources import load_sources
 
@@ -25,10 +26,14 @@ class RunStats:
     pages_skipped: int = 0
     chunks: int = 0
     out_path: str = ""
+    blocked: str | None = None  # set when the usage gate refuses the source (nothing fetched)
 
 
 def run_source(spec: SourceSpec, fetcher: Fetcher | None = None, out_dir: Path | None = None) -> RunStats:
-    """Scrape one source to data/out/<id>.jsonl. Returns counts."""
+    """Scrape one source to data/out/<id>.jsonl. Returns counts. Refuses non-permitted sources."""
+    permitted, reason = is_permitted(spec)
+    if not permitted:
+        return RunStats(source_id=spec.id, blocked=reason)
     own = fetcher is None
     fetcher = fetcher or Fetcher()
     out_dir = out_dir or config.OUT_DIR

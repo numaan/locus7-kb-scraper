@@ -1,7 +1,9 @@
 id: postgresql
 name: PostgreSQL
 component: postgresql
-license: "PostgreSQL docs — The PostgreSQL Global Development Group (BSD-style); verify before redistribution"
+license: "PostgreSQL License"
+license_url: https://www.postgresql.org/about/licence/
+usage: open
 base_url: https://www.postgresql.org/docs/current/
 # PostgreSQL's docs don't expose a per-version sitemap, so fall back to a bounded same-site crawl.
 sitemaps: []

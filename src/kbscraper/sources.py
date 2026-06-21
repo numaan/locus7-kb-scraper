@@ -7,6 +7,7 @@ from pathlib import Path
 
 import yaml
 
+from .licensing import VALID_USAGE
 from .models import SourceSpec
 
 SOURCES_DIR = Path(__file__).resolve().parents[2] / "sources"
@@ -18,12 +19,17 @@ def _to_spec(data: dict, path: Path) -> SourceSpec:
     missing = [k for k in _REQUIRED if not data.get(k)]
     if missing:
         raise ValueError(f"{path.name}: missing required field(s): {', '.join(missing)}")
+    usage = str(data.get("usage", "unknown")).lower()
+    if usage not in VALID_USAGE:
+        raise ValueError(f"{path.name}: invalid usage '{usage}' (expected one of {', '.join(VALID_USAGE)})")
     return SourceSpec(
         id=data["id"],
         name=data["name"],
         component=data["component"],
         base_url=data["base_url"].rstrip("/") + "/",
         license=data["license"],
+        usage=usage,
+        license_url=data.get("license_url"),
         sitemaps=list(data.get("sitemaps", [])),
         allow=list(data.get("allow", [])),
         deny=list(data.get("deny", [])),

@@ -1,7 +1,9 @@
 id: kubernetes
 name: Kubernetes
 component: kubernetes
-license: "CC-BY-4.0 (kubernetes.io documentation)"
+license: "CC-BY-4.0"
+license_url: https://github.com/kubernetes/website/blob/main/LICENSE
+usage: open
 base_url: https://kubernetes.io/docs/
 sitemaps:
   - https://kubernetes.io/sitemap.xml

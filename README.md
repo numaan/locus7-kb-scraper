@@ -67,11 +67,31 @@ QDRANT_URL=http://localhost:6333 python -m kbscraper push --collection locus7_kb
 Embeddings use **fastembed** (lightweight ONNX, no torch); the collection is created with the model's
 vector size. Point this at the same Qdrant that Locus 7 uses.
 
+## Usage gate — only public + permitted content
+
+The pipeline **only fetches documents that are publicly available and whose usage is known to permit
+it.** Two halves:
+
+- **Publicly available** — the fetcher honours `robots.txt`, never sends credentials, and only GETs
+  public URLs. Anything disallowed by robots is skipped.
+- **Usage known** — every source declares a `usage` gate (see
+  [`licensing.py`](src/kbscraper/licensing.py)):
+  - `open` — a **recognised open licence** (Apache-2.0, MIT, BSD, ISC, MPL-2.0, PostgreSQL, CC0,
+    CC-BY*, GFDL). Validated against the source's `license`.
+  - `permitted` — **you reviewed the ToS/licence and attest** it allows indexing.
+  - `restricted` — proprietary / **non-commercial (NC)** / no-derivatives (ND) / disallowed.
+  - `unknown` — the **default**; blocked until you clear it.
+
+Only `open` and `permitted` sources are scraped; `kbscraper list` shows ✓/✗ per source and
+`scrape` prints `BLOCKED — <reason>` for the rest. This is enforced in code (`pipeline.run_source`),
+not just documentation. It does not constitute legal advice — clearing each source's terms is yours.
+
 ## Adding a source
 
 `sources/` is a config-driven registry — **adding a source is data, not code**. Copy
 [`_TEMPLATE.yaml`](sources/_TEMPLATE.yaml) to `sources/<id>.yaml`, set `base_url` +
-`sitemaps`/`allow`/`deny` + `content_selector`, declare the `license`, then scrape it. Working
+`sitemaps`/`allow`/`deny` + `content_selector`, declare the `license` **and the `usage` gate**, then
+scrape it. Working
 exemplars: `postgresql`, `kubernetes`, `kafka`. [`SOURCES.md`](sources/SOURCES.md) maps your full
 component list (Oracle, MySQL, MongoDB, Cassandra, Couchbase, Elasticsearch, OpenShift, Rancher,
 Docker, Podman, F5 GTM/LTM/AFM, AWS, Azure, Confluent, RabbitMQ, Istio, Kong, WSO2, Apigee, NGINX,

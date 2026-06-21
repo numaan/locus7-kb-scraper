@@ -8,6 +8,17 @@ id: example                       # stable slug (filename should match), used in
 name: Example Product             # human label
 component: example                # canonical component key (often == id)
 license: "CHECK-SOURCE-TOS"       # the source content licence (e.g. CC-BY-4.0, Apache-2.0, proprietary)
+license_url: https://docs.example.com/license
+
+# USAGE GATE (see src/kbscraper/licensing.py). The pipeline only scrapes sources whose usage is
+# known to permit it. Values:
+#   open       — a RECOGNISED open licence (Apache-2.0, MIT, BSD, ISC, MPL-2.0, PostgreSQL, CC0,
+#                CC-BY*, GFDL …). Validated against the `license` field above.
+#   permitted  — you reviewed the source's ToS/licence and ATTEST it allows indexing/redistribution.
+#   restricted — proprietary / non-commercial (NC) / no-derivatives (ND) / disallowed. Blocked.
+#   unknown    — default. Blocked until you clear it. Non-commercial licences are NOT "open".
+usage: unknown
+
 base_url: https://docs.example.com/
 
 # Preferred: list one or more sitemaps for precise, complete discovery (sitemap indexes are followed).

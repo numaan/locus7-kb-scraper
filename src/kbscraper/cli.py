@@ -12,13 +12,17 @@ import argparse
 from pathlib import Path
 
 from . import config
+from .licensing import is_permitted
 from .pipeline import run_all, run_source
 from .sources import get_source, load_sources
 
 
 def _cmd_list(_args) -> None:
+    print("  use  id              name                  usage       licence")
     for s in load_sources():
-        print(f"  {s.id:16}  {s.name:22}  {s.base_url}")
+        ok, _ = is_permitted(s)
+        print(f"  {'OK ' if ok else '-- '} {s.id:14}  {s.name:20}  {s.usage:10}  {s.license}")
+    print("\n  OK = will scrape (publicly available + usage permitted) | -- = blocked by the usage gate")
 
 
 def _cmd_scrape(args) -> None:
@@ -26,6 +30,9 @@ def _cmd_scrape(args) -> None:
     runs = run_all(out_dir) if args.source == "all" else [run_source(get_source(args.source), out_dir=out_dir)]
     total = 0
     for r in runs:
+        if r.blocked:
+            print(f"[{r.source_id}] BLOCKED — {r.blocked}")
+            continue
         print(f"[{r.source_id}] urls={r.urls} kept={r.pages_kept} skipped={r.pages_skipped} chunks={r.chunks} -> {r.out_path}")
         total += r.chunks
     print(f"Total chunks: {total}")

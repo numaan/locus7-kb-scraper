@@ -18,6 +18,10 @@ class SourceSpec:
     component: str  # canonical component key used in the chunk metadata
     base_url: str
     license: str  # the source's content licence (your responsibility to honour)
+    # Usage gate (see licensing.py): "open" (recognised open licence) | "permitted" (you attested the
+    # ToS allows this) | "restricted" (disallowed) | "unknown" (default — BLOCKED until cleared).
+    usage: str = "unknown"
+    license_url: str | None = None  # link to the licence / terms of service
     sitemaps: list[str] = field(default_factory=list)  # preferred URL discovery
     allow: list[str] = field(default_factory=list)  # substring/prefix filters a URL must match
     deny: list[str] = field(default_factory=list)  # substrings that exclude a URL
