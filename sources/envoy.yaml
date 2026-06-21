@@ -1,0 +1,17 @@
+id: envoy
+name: Envoy
+component: envoy
+license: "Apache-2.0"
+license_url: https://github.com/envoyproxy/envoy/blob/main/LICENSE
+usage: open
+base_url: https://www.envoyproxy.io/docs/envoy/latest/
+# Versioned Sphinx docs; crawl the latest tree (sitemap not relied upon).
+sitemaps: []
+allow:
+  - /docs/envoy/latest/
+deny:
+  - /docs/envoy/latest/api-v3/   # very large generated API reference (optional)
+content_selector: "[role=main]"
+max_pages: 200
+rate_limit_s: 1.0
+enabled: true

@@ -1,0 +1,17 @@
+id: podman
+name: Podman
+component: podman
+license: "Apache-2.0"
+license_url: https://github.com/containers/podman/blob/main/LICENSE
+usage: open
+base_url: https://docs.podman.io/en/latest/
+sitemaps:
+  - https://docs.podman.io/sitemap.xml
+allow:
+  - /en/latest/
+deny:
+  - /en/v          # older pinned versions
+content_selector: "[role=main]"
+max_pages: 200
+rate_limit_s: 1.0
+enabled: true

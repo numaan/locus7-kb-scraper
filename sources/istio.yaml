@@ -1,0 +1,21 @@
+id: istio
+name: Istio
+component: istio
+license: "Apache-2.0"
+license_url: https://github.com/istio/istio.io/blob/master/LICENSE
+usage: open
+base_url: https://istio.io/latest/docs/
+sitemaps:
+  - https://istio.io/sitemap.xml
+allow:
+  - /latest/docs/
+deny:
+  - /zh/
+  - /es/
+  - /fr/
+  - /pt-br/
+  - /docs/reference/commands/   # generated CLI reference (optional)
+content_selector: "main"
+max_pages: 250
+rate_limit_s: 1.0
+enabled: true

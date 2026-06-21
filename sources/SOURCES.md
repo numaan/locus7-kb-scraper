@@ -9,16 +9,13 @@ are scraped.** Everything else is blocked. The status column below is a *startin
 each before flipping it; non-commercial (NC) and no-derivatives (ND) count as restricted.
 
 **✅ Implemented + open (scrape now):** `postgresql` (PostgreSQL Licence), `kubernetes` (CC-BY-4.0),
-`kafka` (Apache-2.0).
+`kafka` (Apache-2.0), `cassandra` (Apache-2.0), `podman` (Apache-2.0), `istio` (Apache-2.0),
+`envoy` (Apache-2.0).
 
 **📝 Requested — start URLs + suggested usage** (confirm before enabling):
 
 | id | component | docs start URL | licence | usage (suggested) |
 |----|-----------|----------------|---------|-------------------|
-| cassandra | Apache Cassandra | https://cassandra.apache.org/doc/latest/ | Apache-2.0 | **open** |
-| podman | Podman | https://docs.podman.io/en/latest/ | Apache-2.0 | **open** |
-| istio | Istio (service mesh) | https://istio.io/latest/docs/ | Apache-2.0 / CC-BY-4.0 | **open** |
-| envoy | Envoy proxy | https://www.envoyproxy.io/docs/envoy/latest/ | Apache-2.0 | **open** |
 | docker | Docker | https://docs.docker.com/ | Apache-2.0 (docs repo) | **open** (verify) |
 | wso2 | WSO2 API Manager | https://apim.docs.wso2.com/en/latest/ | Apache-2.0 (verify) | **open** (verify) |
 | azure | Azure services | https://learn.microsoft.com/en-us/azure/ | often CC-BY-4.0 (MS Learn) | unknown — verify per area; scope tightly |
