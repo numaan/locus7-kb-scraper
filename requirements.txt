@@ -1,0 +1,6 @@
+# Scrape + clean pipeline (no ML / Qdrant deps needed to produce the JSONL).
+httpx>=0.27
+trafilatura>=1.8
+beautifulsoup4>=4.12
+lxml>=5.2
+PyYAML>=6.0

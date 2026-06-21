@@ -1,0 +1,31 @@
+# Source template (files starting with "_" are ignored by the loader). Copy to <id>.yaml to add a
+# source. Adding a source is DATA, not code — the pipeline reads every *.yaml here.
+#
+# Before enabling a source: check its robots.txt and Terms of Service / content licence. The fetcher
+# respects robots.txt and rate-limits, but honouring the licence of the scraped text is YOUR call.
+
+id: example                       # stable slug (filename should match), used in chunk metadata
+name: Example Product             # human label
+component: example                # canonical component key (often == id)
+license: "CHECK-SOURCE-TOS"       # the source content licence (e.g. CC-BY-4.0, Apache-2.0, proprietary)
+base_url: https://docs.example.com/
+
+# Preferred: list one or more sitemaps for precise, complete discovery (sitemap indexes are followed).
+sitemaps:
+  - https://docs.example.com/sitemap.xml
+
+# URL filters (applied to discovered URLs). `allow`: a URL must contain ONE of these substrings.
+# `deny`: a URL containing ANY of these is dropped. Leave `allow` empty to accept the whole site.
+allow:
+  - /docs/
+deny:
+  - /api/v1/        # e.g. drop noisy generated API reference
+  - ?print=
+
+# Optional CSS selector for the main content (used only by the BeautifulSoup fallback; trafilatura
+# usually finds main content on its own).
+content_selector: "main"
+
+max_pages: 200                    # safety cap per source
+rate_limit_s: 1.0                 # seconds between requests to the same host (be polite)
+enabled: true

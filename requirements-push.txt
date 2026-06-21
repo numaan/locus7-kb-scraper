@@ -1,0 +1,4 @@
+# Optional: embed the JSONL chunks + upsert to Qdrant (kbscraper push).
+# fastembed is a lightweight ONNX embedder (no torch).
+qdrant-client>=1.9
+fastembed>=0.3

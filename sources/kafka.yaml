@@ -1,0 +1,17 @@
+id: kafka
+name: Apache Kafka
+component: kafka
+license: "Apache-2.0 (kafka.apache.org documentation)"
+base_url: https://kafka.apache.org/
+# Kafka's core docs are large single pages; crawl the documentation + ops areas.
+sitemaps: []
+allow:
+  - /documentation
+  - /protocol
+deny:
+  - /downloads
+  - /cve
+content_selector: ".content"
+max_pages: 40
+rate_limit_s: 1.5
+enabled: true

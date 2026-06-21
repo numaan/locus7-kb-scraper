@@ -1,0 +1,16 @@
+id: postgresql
+name: PostgreSQL
+component: postgresql
+license: "PostgreSQL docs — The PostgreSQL Global Development Group (BSD-style); verify before redistribution"
+base_url: https://www.postgresql.org/docs/current/
+# PostgreSQL's docs don't expose a per-version sitemap, so fall back to a bounded same-site crawl.
+sitemaps: []
+allow:
+  - /docs/current/
+deny:
+  - /docs/current/release-
+  - /docs/current/bug-reporting
+content_selector: "#docContent"
+max_pages: 150
+rate_limit_s: 1.5
+enabled: true
