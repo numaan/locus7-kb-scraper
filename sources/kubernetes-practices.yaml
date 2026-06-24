@@ -1,0 +1,25 @@
+id: kubernetes-practices
+name: Kubernetes Best Practices
+component: kubernetes
+license: "CC-BY-4.0"
+license_url: https://github.com/kubernetes/website/blob/main/LICENSE
+usage: open
+# Scoped to the configuration + production best-practices sections (the "Configuration Best
+# Practices" page lands as `pattern`; the production setup pages enrich runbooks). (P10-06)
+base_url: https://kubernetes.io/docs/concepts/configuration/
+sitemaps: []
+allow:
+  - /docs/concepts/configuration/
+deny:
+  - /zh-cn/
+  - /ja/
+  - /ko/
+  - /fr/
+  - /de/
+  - /es/
+  - /pt-br/
+  - /ru/
+content_selector: ".td-content"
+max_pages: 20
+rate_limit_s: 1.0
+enabled: true

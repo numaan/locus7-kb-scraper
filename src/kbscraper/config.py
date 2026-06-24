@@ -21,6 +21,9 @@ USER_AGENT = os.environ.get(
 REQUEST_TIMEOUT_S = float(os.environ.get("KB_TIMEOUT_S", "30"))
 MAX_RETRIES = int(os.environ.get("KB_MAX_RETRIES", "3"))
 RESPECT_ROBOTS = os.environ.get("KB_RESPECT_ROBOTS", "true").lower() != "false"
+# TLS verification (default on). Set KB_TLS_VERIFY=false only behind a trusted intercepting proxy
+# (e.g. a corporate / sandboxed network with a MITM cert you cannot install). Never for untrusted nets.
+TLS_VERIFY = os.environ.get("KB_TLS_VERIFY", "true").lower() != "false"
 
 # Optional push step (qdrant_push.py).
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")

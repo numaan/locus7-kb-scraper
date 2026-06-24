@@ -1,0 +1,21 @@
+id: istio-practices
+name: Istio Best Practices
+component: istio
+license: "Apache-2.0"
+license_url: https://github.com/istio/istio.io/blob/master/LICENSE
+usage: open
+# Scoped to the operations BEST-PRACTICES section so these pages reliably land as `pattern`
+# (their titles are "... Best Practices"). Complements the broad `istio` source. (P10-06)
+base_url: https://istio.io/latest/docs/ops/best-practices/
+sitemaps: []
+allow:
+  - /latest/docs/ops/best-practices/
+deny:
+  - /zh/
+  - /es/
+  - /fr/
+  - /pt-br/
+content_selector: "main"
+max_pages: 30
+rate_limit_s: 1.0
+enabled: true

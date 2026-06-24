@@ -41,7 +41,8 @@ def _cmd_scrape(args) -> None:
 def _cmd_push(args) -> None:
     from .qdrant_push import push  # imported lazily so scrape works without push deps
 
-    push(in_dir=Path(args.in_dir) if args.in_dir else None, collection=args.collection, url=args.url)
+    push(in_dir=Path(args.in_dir) if args.in_dir else None, collection=args.collection,
+         url=args.url, recreate=not args.no_recreate)
 
 
 def _cmd_backfill(args) -> None:
@@ -65,6 +66,7 @@ def main(argv: list[str] | None = None) -> None:
     ps.add_argument("--in", dest="in_dir", default=None, help="input dir of JSONL (default data/out)")
     ps.add_argument("--collection", default=None, help="Qdrant collection (default $QDRANT_COLLECTION)")
     ps.add_argument("--url", default=None, help="Qdrant URL (default $QDRANT_URL)")
+    ps.add_argument("--no-recreate", action="store_true", help="append/upsert instead of rebuilding the collection")
     ps.set_defaults(func=_cmd_push)
 
     bf = sub.add_parser("backfill", help="re-classify doc_type on an existing collection (no re-embed)")

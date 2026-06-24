@@ -83,6 +83,7 @@ class Fetcher:
             headers={"User-Agent": config.USER_AGENT},
             timeout=config.REQUEST_TIMEOUT_S,
             follow_redirects=True,
+            verify=config.TLS_VERIFY,  # off only behind a trusted MITM proxy (KB_TLS_VERIFY=false)
         )
         self._robots: dict[str, RobotFileParser | None] = {}
         self._last_hit: dict[str, float] = {}

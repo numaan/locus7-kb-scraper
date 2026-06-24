@@ -74,8 +74,12 @@ def _iter_records(in_dir: Path):
                     yield json.loads(line)
 
 
-def push(in_dir: Path | None = None, collection: str | None = None, url: str | None = None, batch: int = 128) -> int:
-    """Embed + upsert all JSONL records under in_dir into Qdrant. Returns the count upserted."""
+def push(in_dir: Path | None = None, collection: str | None = None, url: str | None = None, batch: int = 128, recreate: bool = True) -> int:
+    """Embed + upsert all JSONL records under in_dir into Qdrant. Returns the count upserted.
+
+    recreate=True (default) rebuilds the collection from scratch — a full re-ingest. recreate=False
+    APPENDS: create the collection only if missing, then upsert (stable chunk ids dedupe re-runs),
+    so new sources add to the corpus without wiping it."""
     try:
         from fastembed import TextEmbedding
         from qdrant_client import QdrantClient
@@ -96,7 +100,10 @@ def push(in_dir: Path | None = None, collection: str | None = None, url: str | N
     dim = len(next(iter(embedder.embed(["dimension probe"]))))
 
     client = QdrantClient(url=url)
-    client.recreate_collection(collection, vectors_config=VectorParams(size=dim, distance=Distance.COSINE))
+    if recreate:
+        client.recreate_collection(collection, vectors_config=VectorParams(size=dim, distance=Distance.COSINE))
+    elif not client.collection_exists(collection):
+        client.create_collection(collection, vectors_config=VectorParams(size=dim, distance=Distance.COSINE))
 
     upserted = 0
     for i in range(0, len(records), batch):
