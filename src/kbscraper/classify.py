@@ -63,3 +63,44 @@ def classify(text: str, title: str = "") -> tuple[Category, list[str]]:
     if resilience_score >= best_score and resilience_score > 0:
         best = "resilience"
     return best, tags
+
+
+# --- Document type (genre) — orthogonal to `category` (subject) --------------------------------
+# `category` says what a chunk is ABOUT (resilience/reference/concept); `doc_type` says what KIND of
+# page it is (runbook/pattern/reference/concept). This is what Locus 7's KB browser splits Patterns
+# vs Runbooks on. Heuristic + deterministic (no model), tunable by editing the signal sets below.
+DocType = str  # "runbook" | "pattern" | "reference" | "concept"
+
+# Operational, step-by-step / procedural language → a runbook.
+_RUNBOOK = re.compile(
+    r"\b(step[-\s]?\d|step[-\s]by[-\s]step|follow these steps|procedure|runbook|"
+    r"troubleshoot(ing)?|to (configure|install|set up|setup|enable|create|deploy|upgrade|migrate|"
+    r"restore|recover|restart|start|stop|run|rotate|scale|provision)|run the following|"
+    r"execute the|on each (node|server|host)|checklist|recovery steps|operational)\b",
+    re.IGNORECASE,
+)
+# Prescriptive design / architecture guidance → a pattern (best practices fold in here).
+_PATTERN = re.compile(
+    r"\b(best[-\s]practice|recommended|we recommend|you should|should not|anti[-\s]?pattern|"
+    r"design pattern|guideline|rule of thumb|when to use|consider (using|whether)|trade[-\s]?off|"
+    r"do not|prefer|avoid|it is advisable|as a (general )?rule)\b",
+    re.IGNORECASE,
+)
+
+# Tie-break priority when scores are equal: an operational page reads as a runbook, prescriptive
+# guidance as a pattern, then concept, with reference the catch-all default for dense API docs.
+_DOCTYPE_PRIORITY = {"runbook": 3, "pattern": 2, "concept": 1, "reference": 0}
+
+
+def classify_doc_type(text: str, title: str = "") -> DocType:
+    """Return the document genre (runbook | pattern | reference | concept). Deterministic; defaults
+    to 'reference' when no genre signal is present (the bulk of vendor docs)."""
+    blob = f"{title}\n{title}\n{text}".lower()  # title weighted ×2 — it's the strongest genre cue
+    scores = {
+        "runbook": _count(_RUNBOOK, blob),
+        "pattern": _count(_PATTERN, blob),
+        "reference": _count(_REFERENCE, blob),
+        "concept": _count(_CONCEPT, blob),
+    }
+    best = max(scores, key=lambda k: (scores[k], _DOCTYPE_PRIORITY[k]))
+    return best if scores[best] > 0 else "reference"

@@ -44,6 +44,12 @@ def _cmd_push(args) -> None:
     push(in_dir=Path(args.in_dir) if args.in_dir else None, collection=args.collection, url=args.url)
 
 
+def _cmd_backfill(args) -> None:
+    from .qdrant_push import backfill_doc_type  # lazy import (Qdrant dep)
+
+    backfill_doc_type(collection=args.collection, url=args.url)
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="kbscraper", description="Scrape component docs into Qdrant-ready chunks.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -60,6 +66,11 @@ def main(argv: list[str] | None = None) -> None:
     ps.add_argument("--collection", default=None, help="Qdrant collection (default $QDRANT_COLLECTION)")
     ps.add_argument("--url", default=None, help="Qdrant URL (default $QDRANT_URL)")
     ps.set_defaults(func=_cmd_push)
+
+    bf = sub.add_parser("backfill", help="re-classify doc_type on an existing collection (no re-embed)")
+    bf.add_argument("--collection", default=None, help="Qdrant collection (default $QDRANT_COLLECTION)")
+    bf.add_argument("--url", default=None, help="Qdrant URL (default $QDRANT_URL)")
+    bf.set_defaults(func=_cmd_backfill)
 
     args = p.parse_args(argv)
     args.func(args)

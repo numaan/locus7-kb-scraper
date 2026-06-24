@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 import uuid
 
-from .classify import classify
+from .classify import classify, classify_doc_type
 from .clean import content_hash
 from .models import Chunk, CleanDoc
 
@@ -66,6 +66,10 @@ def build_chunks(doc: CleanDoc, scraped_at: str) -> list[Chunk]:
     """Turn a CleanDoc into Qdrant-ready Chunk records with classification + metadata."""
     chunks: list[Chunk] = []
     pieces = chunk_text(doc.text)
+    # doc_type is a DOCUMENT-level genre (one page = one genre), classified from the whole doc so a
+    # man page with a stray "you should" stays reference rather than scattering across genres. The
+    # per-chunk `category` (subject) still varies within a doc. (P10-06)
+    doc_type = classify_doc_type(doc.text, doc.title)
     for i, piece in enumerate(pieces):
         category, tags = classify(piece, doc.title)
         cid = str(uuid.uuid5(_NS, f"{doc.url}#{i}"))
@@ -79,7 +83,8 @@ def build_chunks(doc: CleanDoc, scraped_at: str) -> list[Chunk]:
                     "source_name": doc.source.name,
                     "title": doc.title,
                     "url": doc.url,
-                    "category": category,
+                    "category": category,  # subject: resilience | reference | concept
+                    "doc_type": doc_type,  # genre: runbook | pattern | reference | concept (P10-06)
                     "tags": tags,
                     "license": doc.source.license,
                     "chunk_index": i,
