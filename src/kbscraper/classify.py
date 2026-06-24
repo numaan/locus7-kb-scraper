@@ -71,36 +71,79 @@ def classify(text: str, title: str = "") -> tuple[Category, list[str]]:
 # vs Runbooks on. Heuristic + deterministic (no model), tunable by editing the signal sets below.
 DocType = str  # "runbook" | "pattern" | "reference" | "concept"
 
-# Operational, step-by-step / procedural language → a runbook.
+# Operational, step-by-step / procedural language → a runbook. Deliberately narrow: only genuinely
+# procedural cues, NOT the bare "to <verb>" phrasing that pervades reference docs ("to configure X,
+# set parameter Y"). Operational verbs are kept only in the recovery/ops sense.
 _RUNBOOK = re.compile(
-    r"\b(step[-\s]?\d|step[-\s]by[-\s]step|follow these steps|procedure|runbook|"
-    r"troubleshoot(ing)?|to (configure|install|set up|setup|enable|create|deploy|upgrade|migrate|"
-    r"restore|recover|restart|start|stop|run|rotate|scale|provision)|run the following|"
-    r"execute the|on each (node|server|host)|checklist|recovery steps|operational)\b",
+    r"\b(step[-\s]?\d|step[-\s]by[-\s]step|follow these steps|following steps|"
+    r"procedure|runbook|troubleshoot(ing)?|run the following|execute the following|"
+    r"on each (node|server|host|broker)|recovery (steps|procedure)|"
+    r"to (recover|restore|fail ?over|switch ?over|promote|upgrade|migrate|rotate|"
+    r"provision|bootstrap|decommission|drain)|walkthrough|how[-\s]?to guide)\b",
     re.IGNORECASE,
 )
-# Prescriptive design / architecture guidance → a pattern (best practices fold in here).
+# Prescriptive design / architecture guidance → a pattern (best practices fold in here). Narrowed
+# to genuinely prescriptive phrasing; bare "recommended"/"avoid" alone is weak, so it must out-score
+# reference/concept (see the margin rule below) rather than win on a single hit.
 _PATTERN = re.compile(
-    r"\b(best[-\s]practice|recommended|we recommend|you should|should not|anti[-\s]?pattern|"
-    r"design pattern|guideline|rule of thumb|when to use|consider (using|whether)|trade[-\s]?off|"
-    r"do not|prefer|avoid|it is advisable|as a (general )?rule)\b",
+    r"\b(best[-\s]practice|production recommendation|we recommend|it is recommended|"
+    r"you should|should not|must not|anti[-\s]?pattern|design pattern|"
+    r"rule of thumb|when to use|consider (using|whether)|trade[-\s]?off|"
+    r"it is advisable|as a (general )?rule|for production|in production)\b",
+    re.IGNORECASE,
+)
+# Man-page shape — distinctive reference markers that keep command/API pages out of the
+# pattern/runbook buckets. Deliberately NOT bare "options"/"--flag" (those pervade every doc and
+# would swamp the score); only the structural man-page headings.
+_REFMAN = re.compile(
+    r"\b(synopsis|usage:|exit status|return value|see also|man(ual)? page)\b",
     re.IGNORECASE,
 )
 
-# Tie-break priority when scores are equal: an operational page reads as a runbook, prescriptive
-# guidance as a pattern, then concept, with reference the catch-all default for dense API docs.
-_DOCTYPE_PRIORITY = {"runbook": 3, "pattern": 2, "concept": 1, "reference": 0}
+# The page TITLE is the strongest genre cue — docs are organised by purpose. A how-to/quickstart/
+# operations title is a runbook; a best-practice/tuning/recommendation title is a pattern. These win
+# outright (body keyword counts are noisy and scale with length, drowning genre on long ref pages).
+_TITLE_RUNBOOK = re.compile(
+    r"\b(quickstarts?|quick start|tutorials?|getting started|how[-\s]?tos?|walkthroughs?|"
+    r"step[-\s]by[-\s]step|install(ation|ing)?|deploy(ing|ment)?|set[-\s]?up|configuring|"
+    r"migrat(e|ion|ing)|upgrad(e|ing)|backups?|restore|recover(y|ing)|disaster recovery|"
+    r"fail[-\s]?over|switch[-\s]?over|operations?|runbooks?|procedures?|maintenance|provisioning|"
+    r"bootstrap|getting[-\s]?started)\b",
+    re.IGNORECASE,
+)
+_TITLE_PATTERN = re.compile(
+    r"\b(best[-\s]practices?|recommendations?|guidelines?|anti[-\s]?patterns?|"
+    r"(performance )?tuning|production (checklist|recommendation|guide|readiness|deployment)|"
+    r"hardening|sizing|capacity planning|reference architecture|design (pattern|consideration))\b",
+    re.IGNORECASE,
+)
+
+# A genre needs at least this many BODY signal hits to override reference/concept when the title is
+# neutral (so a lone stray "you should" can't reclassify a reference page).
+_MIN_SPECIAL = 3
 
 
 def classify_doc_type(text: str, title: str = "") -> DocType:
-    """Return the document genre (runbook | pattern | reference | concept). Deterministic; defaults
-    to 'reference' when no genre signal is present (the bulk of vendor docs)."""
-    blob = f"{title}\n{title}\n{text}".lower()  # title weighted ×2 — it's the strongest genre cue
-    scores = {
-        "runbook": _count(_RUNBOOK, blob),
-        "pattern": _count(_PATTERN, blob),
-        "reference": _count(_REFERENCE, blob),
-        "concept": _count(_CONCEPT, blob),
-    }
-    best = max(scores, key=lambda k: (scores[k], _DOCTYPE_PRIORITY[k]))
-    return best if scores[best] > 0 else "reference"
+    """Return the document genre (runbook | pattern | reference | concept). Deterministic.
+
+    Title-first: a how-to/quickstart/ops title ⇒ runbook, a best-practice/tuning title ⇒ pattern.
+    When the title is neutral, fall back to body signals but only promote to runbook/pattern when
+    that signal is strong (>= MIN_SPECIAL) AND beats the reference/concept signal — so man pages and
+    API references don't leak into Patterns/Runbooks on a stray 'recommended'."""
+    t = title.lower()
+    rb_title, pat_title = len(_TITLE_RUNBOOK.findall(t)), len(_TITLE_PATTERN.findall(t))
+    if rb_title or pat_title:
+        return "runbook" if rb_title >= pat_title else "pattern"
+
+    body = text.lower()
+    runbook = _count(_RUNBOOK, body)
+    pattern = _count(_PATTERN, body)
+    reference = _count(_REFERENCE, body) + _count(_REFMAN, body)
+    concept = _count(_CONCEPT, body)
+
+    base = "reference" if reference >= concept else "concept"
+    base_score = max(reference, concept)
+    special, special_score = ("runbook", runbook) if runbook >= pattern else ("pattern", pattern)
+    if special_score >= _MIN_SPECIAL and special_score > base_score:
+        return special
+    return base if base_score > 0 else "reference"
